@@ -1,0 +1,1355 @@
+---
+##title: "PROYECTO DE ANALISIS DE GRANDES VOLUMENES DE DATOS"
+title: "<div align='center'><span style='align:center;width:200px;text-align:center;'>INFORME DE ANÁLISIS DE GRANDES VOLUMENES DE DATOS</span></div>"
+subtitle: "<div align='center'><span style='align:center;width:270px;text-align:center;'>Universidad de Almeria</span></div>"
+output: html_document
+author: "<div align='left'><span style='align:center;width:200px;text-align:center;'>BYRON PILLAJO</span></div>"
+date: '`r format(Sys.Date(), "%Y-%B-%d")`'
+Copyright: "Derechos reservados UAL"
+Web: " http://otrspas.ual.es"
+layout: "post"
+theme: united
+bookdown::gitbook:
+highlight: tango
+toc_depth: 2
+csl: apa.csl   
+linkcolor: blue
+urlcolor: blue
+
+##output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Descripción del proyecto
+<p style="text-align: justify;">
+Descargue el conjunto de datos de crédito, donado por Jeffrey C. Schlimmer al Repositorio “UCI Machine Learning” en 1987, al que se puede acceder en https://archive.ics.uci.edu/ml/datasets/automobile. Este conjunto de datos recoge información sobre características y rendimiento de vehículos. El proyecto que tiene que desarrollar consiste en elaborar un informe en R Markdown en el que:  
+
+a. Lleve a cabo un análisis exploratorio de datos.  
+b. Construya, interprete y evalúe un modelo de regresión lineal para el consumo (mpg). A la hora de construir el modelo tenga en cuenta la influencia de las variables.  
+c. Construya, interprete y evalúe un modelo de regresión logística que ayude a determinar la probabilidad de adquirir un vehículo de gasolina (fuel-type).  
+d. Aplique el algoritmo k-medias y obtenga grupos de vehículos. Analice e interprete los grupos obtenidos.  
+</p>
+## Desarrollo del proyecto
+### a. Análisis exploratorio de datos
+#### Instalación de paquetes.
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE, eval=FALSE}
+    options(scipen = 999)
+    install.packages("dplyr", repos = "http://cran.us.r-project.org")
+    install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+    install.packages("readxl", repos = "http://cran.us.r-project.org")
+    install.packages("gmodels", repos = "http://cran.us.r-project.org")
+    install.packages("Hmisc", repos = "http://cran.us.r-project.org")
+    install.packages("ggthemes", repos = "http://cran.us.r-project.org")
+    install.packages("printr", repos = "http://cran.us.r-project.org")
+    install.packages("lattice", repos = "http://cran.us.r-project.org")
+    install.packages("devtools", repos = "http://cran.us.r-project.org")
+    install.packages("scales",repos = "http://cran.us.r-project.org")
+    install.packages(package="mclust",repos = "http://cran.us.r-project.org")
+    
+```
+
+#### Carga de librerias.
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE }
+    library("ggplot2")
+    library("readxl")
+    library("gmodels")
+    library("ggthemes")
+    library("tidyr") 
+    library("readxl")
+    library("tidyverse")
+    library("skimr")
+    library("scales")
+```
+
+#### Cargar de Datos
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE }
+    dfvehiculos <- read.table('http://archive.ics.uci.edu/ml/machine-learning-databases/autos/imports-85.data', header=F, sep=',')
+```
+
+#### Típo del conjunto de Datos
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   class(dfvehiculos)
+```
+
+#### Típos de variables
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   str(dfvehiculos)
+```
+
+#### Detalle de los típos de variables.
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+    glimpse(dfvehiculos)
+```
+
+#### Muestra de los datos cargados
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+    head(dfvehiculos,6)
+```
+  
+#### Tabla de atributos y tipos de datos que representan la información sobre los vehículos. 
+Etiqueta Original Atributo  | Etiqueta Nueva de Atributo  | Tipo de Variable | Tipo de Dato
+-|-|-|-
+V1 | symboling | Entero | int  3 3 1 2 2 2 1 1 1 0 ...
+V2 | normalized-losses | Numérica | chr  "?" "?" "?" "164" ...
+V3 | Make | Nominal | chr  "alfa-romero" "alfa-romero" "alfa-romero" "audi" ...
+V4 | fuel-type | Nominal | chr  "gas" "gas" "gas" "gas" ...
+V5 | Aspiration | Nominal | chr  "std" "std" "std" "std" ...
+V6 | num-of-doors | Nominal | chr  "two" "two" "two" "four" ...
+V7 | body-style | Nominal | chr  "convertible" "convertible" "hatchback" "sedan" ...
+V8 | drive-wheels | Nominal | Campo B0chr  "rwd" "rwd" "rwd" "fwd" ...
+V9 | engine-location | Nominal | chr  "front" "front" "front" "front" ...
+V10 | wheel-base | Numérica | num  88.6 88.6 94.5 99.8 99.4 ...
+V11 | length | Numérica | num  169 169 171 177 177 ...
+V12 | Width | Numérica | num  64.1 64.1 65.5 66.2 66.4 66.3 71.4 71.4 71.4 67.9 ...
+V13 | height | Numérica | num  48.8 48.8 52.4 54.3 54.3 53.1 55.7 55.7 55.9 52 ...
+V14 | curb-weight | Numérica | int  2548 2548 2823 2337 2824 2507 2844 2954 3086 3053 ...
+V15 | engine-type | Nominal | chr  "dohc" "dohc" "ohcv" "ohc" ...
+V16 | num-of-cylinders | Nominal | chr  "dohc" "dohc" "ohcv" "ohc" ...
+V17 | engine-size | Numérica | int  130 130 152 109 136 136 136 136 131 131 ...
+V18 | fuel-system | Nominal | chr  "mpfi" "mpfi" "mpfi" "mpfi" ...
+V19 | Bore | Numérica | chr  "3.47" "3.47" "2.68" "3.19" ...
+V120 | stroke | Numérica | chr  "2.68" "2.68" "3.47" "3.40" ...
+V21 | compression-ratio | Numérica | num  9 9 9 10 8 8.5 8.5 8.5 8.3 7 ...
+V22 | horsepower | Numérica | chr  "111" "111" "154" "102" ...
+V23 | peak-rpm | Numérica | chr  "5000" "5000" "5000" "5500" ...
+V24 | city-mpg | Numérica | int  21 21 19 24 18 19 19 19 17 16 ...
+V25 | highway-mpg | Numérica | int  27 27 26 30 22 25 25 25 20 22 ...
+V26 | highway-mpg | Numérica | chr  "13495" "16500" "16500" "13950" ...
+
+#### Cambio de nombres de las variables
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+colnames(dfvehiculos) <- c('Symboling', 'Normalized_losses', 'Make', 'Fuel_type', 'Aspiration', 'Num_of_doors', 'Body_style', 'Drive_wheels', 'Engine_location', 'Wheel_base', 'Length', 'Width', 'Height', 'Curb_weight', 'Engine_type', 'Num_of_cylinders', 'Engine_size', 'Fuel_system', 'Bore', 'Stroke', 'Compression_ratio', 'Horsepower', 'Peak_rpm', 'City_mpg', 'Highway_mpg', 'Price')
+head(dfvehiculos,10)
+
+```
+
+#### Transformación de la variable Num_of_cylinders 
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+dataTemp <- dfvehiculos
+dataTemp$Num_of_cylinders <- factor(dataTemp$Num_of_cylinders)
+dataTemp$Num_of_cylinders_numeric <- 1 
+dataTemp$Num_of_cylinders_numeric[dataTemp$Num_of_cylinders=="two"] <- 2
+dataTemp$Num_of_cylinders_numeric[dataTemp$Num_of_cylinders=="three"] <- 3
+dataTemp$Num_of_cylinders_numeric[dataTemp$Num_of_cylinders=="four"] <- 4
+dataTemp$Num_of_cylinders_numeric[dataTemp$Num_of_cylinders=="five"] <- 5
+dataTemp$Num_of_cylinders_numeric[dataTemp$Num_of_cylinders=="six"] <- 6
+dataTemp$Num_of_cylinders_numeric[dataTemp$Num_of_cylinders=="eight"] <- 8
+dataTemp$Num_of_cylinders_numeric[dataTemp$Num_of_cylinders=="twelve"] <- 12
+```
+
+### Análisis de influencia de la variable número de cilindros en la variable consumo en la ciudad (City_mpg) del vehículo.  
+Obtenemos los histogramas, densidades, resumen estadístico y diagramas de caja de las variables involucradas. Luego procedemos analizar la influencia de la variable número de cilindros en la variable consumo en la ciudad.
+
+#### Histograma de la Variable Número de Cilindros.
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   ggplot(data = dataTemp, mapping = aes(x=Num_of_cylinders_numeric)) +geom_histogram(bins = 9,fill = "blue")
+```
+
+#### Densidad de vehículos según la variable número de cilindros
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   ggplot(data = dataTemp)+geom_density(aes(x=Num_of_cylinders_numeric),fill = "blue")
+```
+
+#### Histograma y Densidad de la variable número de cilindros
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+ggplot(data = dataTemp,mapping = aes(x = Num_of_cylinders_numeric)) + geom_histogram(aes(y =..density..),bins = 9,position = 'identity',fill = "blue")+ stat_function(fun = dnorm,args = list(mean = mean(dataTemp$Num_of_cylinders_numeric),sd = sd(dataTemp$Num_of_cylinders_numeric)))
+```
+
+#### Resumen estadístico de la variable número de cilindros.
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   summary(dataTemp$Num_of_cylinders_numeric)
+```
+
+#### Histograma de la variable city-mpg (consumo en la ciudad).
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   ggplot(data = dataTemp, mapping = aes(x=City_mpg)) +geom_histogram(bins = 9,fill = "Red")
+```
+
+#### Densidad de vehículos según la Variable city-mpg (consumo en la ciudad).
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   ggplot(data = dataTemp)+geom_density(aes(x=City_mpg),fill = "Red")
+```
+
+#### Histograma y Densidad de la variable city-mpg (consumo en la ciudad)
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+ggplot(data = dataTemp,mapping = aes(x = City_mpg)) + geom_histogram(aes(y =..density..),bins = 9,position = 'identity',fill = "Red")+ stat_function(fun = dnorm,args = list(mean = mean(dataTemp$City_mpg),sd = sd(dataTemp$City_mpg)))
+```
+
+#### Diagrama de dispersión de la variable city-mpg (consumo en la ciudad) en funcion de la variable Num_of_cylinders
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+plot(dataTemp$Num_of_cylinders_numeric, dataTemp$City_mpg, xlab = "Wheel base", ylab = "Miles per Gallon", pch=19)
+```
+
+#### Ajuste lineal de City_mpg en función del Num_of_cylinders
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+ggplot(data = dataTemp, aes(x=Num_of_cylinders_numeric,y=City_mpg))+geom_point()+stat_smooth(method = "lm")+ylim(0,50)#
+```
+
+### Curva de suavizado de City_mpg función del Num_of_cylinders
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+ggplot(dataTemp, aes(x=Num_of_cylinders_numeric,y=City_mpg))+geom_point()+geom_smooth()+ylim(0,50)
+```
+
+#### Histograma y Densidad de la variable City-mpg (consumo en la ciudad)
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+ggplot(data = dataTemp,mapping = aes(x = City_mpg)) + geom_histogram(aes(y =..density..),bins = 9,position = 'identity',fill = "Red")+ stat_function(fun = dnorm,args = list(mean = mean(dataTemp$City_mpg),sd = sd(dataTemp$City_mpg)))
+```
+
+#### Resumen estadístico de la variable City-mpg (consumo en la ciudad) 
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+summary(dataTemp$City_mpg)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+#Cambiar a Numero de cilindros la variable Num_of_cylinders_numeric en el data Frame temporal
+dataTemp$Num_of_cylinders_numeric <- factor(dataTemp$Num_of_cylinders_numeric)
+#dataTemp$Num_of_cylinders_numeric
+#View(dataTemp)
+#str(dataTemp)
+#Se ordenan las distintas observaciones para la variable
+dataTemp <- dataTemp[order(dataTemp$Num_of_cylinders_numeric), ]
+#dataTemp$Num_of_cylinders_numeric
+#City-mpg
+```
+
+#### Diagrama de caja de la variable City-mpg (consumo en la ciudad) en función del número de cilindros 
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   boxplot(City_mpg~Num_of_cylinders_numeric, data = dataTemp, main = 'Car Milage Data (City)', xlab = "Number of Cylinders", ylab = "Miles Per Gallon (City-mpg)")
+```
+
+#### Diagrama de caja de la variable Highway_mpg (consumo en la carretera) en función del número de cilindros 
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   boxplot(Highway_mpg~Num_of_cylinders_numeric, data = dataTemp, main = 'Car Milage Data (Highway)', xlab = "Number of Cylinders", ylab = "Miles Per Gallon (Highway-mpg)")
+```
+
+#### Tratar valores perdidos
+Cambiamos los caracteres "?" por "NA" en dataframe
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+dfvehiculos$Bore[dfvehiculos$Bore == "?"] <- "NA"
+dfvehiculos$Stroke[dfvehiculos$Stroke == "?"] <-"NA"
+dfvehiculos$Horsepower[dfvehiculos$Horsepower == "?"] <- "NA"
+dfvehiculos$Peak_rpm[dfvehiculos$Peak_rpm == "?"] <- "NA"
+dfvehiculos$Price[dfvehiculos$Price == "?"] <- "NA"
+dfvehiculos$Num_of_doors[dfvehiculos$Num_of_doors == "?"] <- "NA"
+dfvehiculos$Normalized_losses[dfvehiculos$Normalized_losses == "?"] <- "NA"
+dfvehiculos <- na.omit(dfvehiculos)
+```
+
+#### Transformaciones necesarias.
+Realizamos las transformaciones para que las varibles que tengan que ser numéricas, sean numéricas y no factores.
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+dfvehiculos$Bore = as.numeric(dfvehiculos$Bore)
+dfvehiculos$Stroke = as.numeric(dfvehiculos$Stroke)
+dfvehiculos$Horsepower = as.numeric(dfvehiculos$Horsepower)
+dfvehiculos$Peak_rpm = as.numeric(dfvehiculos$Peak_rpm)
+dfvehiculos$Price = as.numeric(dfvehiculos$Price)
+#str(dfvehiculos)
+```
+### Identifique otros factores que puedan influir sobre el consumo del vehículo.
+#### Análisis explotatorio de influencia de las variables númericas en City_mpg
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   plot(dfvehiculos$Wheel_base, dfvehiculos$City_mpg, xlab = "Wheel base", ylab = "Miles per Gallon", pch=19, main="Diagrama de Dispersión City_mpg vs Wheel_base")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(data = dfvehiculos, aes(x=Wheel_base,y=City_mpg))+geom_point()+stat_smooth(method = "lm")+ylim(0,50)+ggtitle("Ajuste lineal City_mpg vs Wheel_base")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(dfvehiculos, aes(x=Wheel_base,y=City_mpg))+geom_point()+geom_smooth()+ylim(0,50)+ggtitle("Suavizado Ajustado a los datos City_mpg vs Wheel_base")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   plot(dfvehiculos$Length, dfvehiculos$City_mpg, xlab = "Wheel base", ylab = "Miles per Gallon", pch=19, main="Diagrama de Dispersión City_mpg vs Length")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(data = dfvehiculos, aes(x=Length,y=City_mpg))+geom_point()+stat_smooth(method = "lm")+ylim(0,50)+ggtitle("Ajuste lineal City_mpg vs Length")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(dfvehiculos, aes(x=Length,y=City_mpg))+geom_point()+geom_smooth()+ylim(0,50)+ggtitle("Suavizado Ajustado a los datos City_mpg vs Length")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   plot(dfvehiculos$Width, dfvehiculos$City_mpg, xlab = "Wheel base", ylab = "Miles per Gallon", pch=19, main="Diagrama de Dispersión City_mpg vs Width")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(data = dfvehiculos, aes(x=Width,y=City_mpg))+geom_point()+stat_smooth(method = "lm")+ylim(0,50)+ggtitle("Ajuste lineal City_mpg vs Width")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(dfvehiculos, aes(x=Width,y=City_mpg))+geom_point()+geom_smooth()+ylim(0,50)+ggtitle("Suavizado Ajustado a los datos City_mpg vs Width")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   plot(dfvehiculos$Height, dfvehiculos$City_mpg, xlab = "Wheel base", ylab = "Miles per Gallon", pch=19, main="Diagrama de Dispersión City_mpg vs Height")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(data = dfvehiculos, aes(x=Height,y=City_mpg))+geom_point()+stat_smooth(method = "lm")+ylim(0,50)+ggtitle("Ajuste lineal City_mpg vs Height")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(dfvehiculos, aes(x=Height,y=City_mpg))+geom_point()+geom_smooth()+ylim(0,50)+ggtitle("Suavizado Ajustado a los datos City_mpg vs Height")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   plot(dfvehiculos$Curb_weight, dfvehiculos$City_mpg, xlab = "Wheel base", ylab = "Miles per Gallon", pch=19, main="Diagrama de Dispersión City_mpg vs Curb_weight")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(data = dfvehiculos, aes(x=Curb_weight,y=City_mpg))+geom_point()+stat_smooth(method = "lm")+ylim(0,50)+ggtitle("Ajuste lineal City_mpg vs Curb_weight")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(dfvehiculos, aes(x=Curb_weight,y=City_mpg))+geom_point()+geom_smooth()+ylim(0,50)+ggtitle("Suavizado Ajustado a los datos City_mpg vs Curb_weight")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   plot(dfvehiculos$Engine_size, dfvehiculos$City_mpg, xlab = "Wheel base", ylab = "Miles per Gallon", pch=19, main="Diagrama de Dispersión City_mpg vs Engine_size")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(data = dfvehiculos, aes(x=Engine_size,y=City_mpg))+geom_point()+stat_smooth(method = "lm")+ylim(0,50)+ggtitle("Ajuste lineal City_mpg vs Engine_size")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(dfvehiculos, aes(x=Engine_size,y=City_mpg))+geom_point()+geom_smooth()+ylim(0,50)+ggtitle("Suavizado Ajustado a los datos City_mpg vs Engine_size")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   plot(dfvehiculos$Bore, dfvehiculos$City_mpg, xlab = "Wheel base", ylab = "Miles per Gallon", pch=19, main="Diagrama de Dispersión City_mpg vs Bore")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(data = dfvehiculos, aes(x=Bore,y=City_mpg))+geom_point()+stat_smooth(method = "lm")+ylim(0,50)+ggtitle("Ajuste lineal City_mpg vs Bore")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(dfvehiculos, aes(x=Bore,y=City_mpg))+geom_point()+geom_smooth()+ylim(0,50)+ggtitle("Suavizado Ajustado a los datos City_mpg vs Bore")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   plot(dfvehiculos$Stroke, dfvehiculos$City_mpg, xlab = "Wheel base", ylab = "Miles per Gallon", pch=19, main="Diagrama de Dispersión City_mpg vs Stroke")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(data = dfvehiculos, aes(x=Stroke,y=City_mpg))+geom_point()+stat_smooth(method = "lm")+ylim(0,50)+ggtitle("Ajuste lineal City_mpg vs Stroke")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(dfvehiculos, aes(x=Stroke,y=City_mpg))+geom_point()+geom_smooth()+ylim(0,50)+ggtitle("Suavizado Ajustado a los datos City_mpg vs Stroke")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   plot(dfvehiculos$Compression_ratio, dfvehiculos$City_mpg, xlab = "Wheel base", ylab = "Miles per Gallon", pch=19, main="Diagrama de Dispersión City_mpg vs Compression_ratio")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+  ggplot(data = dfvehiculos, aes(x=Compression_ratio,y=City_mpg))+geom_point()+stat_smooth(method = "lm")+ylim(0,50)+ggtitle("Ajuste lineal City_mpg vs Compression_ratio")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(dfvehiculos, aes(x=Compression_ratio,y=City_mpg))+geom_point()+geom_smooth()+ylim(0,50)+ggtitle("Suavizado Ajustado a los datos City_mpg vs Compression_ratio")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   plot(dfvehiculos$Horsepower, dfvehiculos$City_mpg, xlab = "Wheel base", ylab = "Miles per Gallon", pch=19, main="Diagrama de Dispersión City_mpg vs Horsepower")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(data = dfvehiculos, aes(x=Horsepower,y=City_mpg))+geom_point()+stat_smooth(method = "lm")+ylim(0,50)+ggtitle("Ajuste lineal City_mpg vs Horsepower")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(dfvehiculos, aes(x=Horsepower,y=City_mpg))+geom_point()+geom_smooth()+ylim(0,50)+ggtitle("Suavizado Ajustado a los datos City_mpg vs Horsepower")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   plot(dfvehiculos$Peak_rpm, dfvehiculos$City_mpg, xlab = "Wheel base", ylab = "Miles per Gallon", pch=19, main="Diagrama de Dispersión City_mpg vs Peak_rpm")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(data = dfvehiculos, aes(x=Peak_rpm,y=City_mpg))+geom_point()+stat_smooth(method = "lm")+ylim(0,50)+ggtitle("Ajuste lineal City_mpg vs Peak_rpm")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(dfvehiculos, aes(x=Peak_rpm,y=City_mpg))+geom_point()+geom_smooth()+ylim(0,50)+ggtitle("Suavizado Ajustado a los datos City_mpg vs Peak_rpm")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   plot(dfvehiculos$Price, dfvehiculos$City_mpg, xlab = "Wheel base", ylab = "Miles per Gallon", pch=19, main="Diagrama de Dispersión City_mpg vs Price")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(data = dfvehiculos, aes(x=Price,y=City_mpg))+geom_point()+stat_smooth(method = "lm")+ylim(0,50)+ggtitle("Ajuste lineal City_mpg vs Price")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(dfvehiculos, aes(x=Price,y=City_mpg))+geom_point()+geom_smooth()+ylim(0,50)+ggtitle("Suavizado Ajustado a los datos City_mpg vs Price")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   plot(dfvehiculos$Peak_rpm, dfvehiculos$City_mpg, xlab = "Wheel base", ylab = "Miles per Gallon", pch=19, main="Diagrama de Dispersión City_mpg vs Peak_rpm")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(data = dfvehiculos, aes(x=Peak_rpm,y=City_mpg))+geom_point()+stat_smooth(method = "lm")+ylim(0,50)+ggtitle("Ajuste lineal City_mpg vs Peak_rpm")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(dfvehiculos, aes(x=Peak_rpm,y=City_mpg))+geom_point()+geom_smooth()+ylim(0,50)+ggtitle("Suavizado Ajustado a los datos City_mpg vs Peak_rpm")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   plot(dfvehiculos$Highway_mpg, dfvehiculos$City_mpg, xlab = "Wheel base", ylab = "Miles per Gallon", pch=19, main="Diagrama de Dispersión City_mpg vs Highway_mpg")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  ggplot(data = dfvehiculos, aes(x=Highway_mpg,y=City_mpg))+geom_point()+stat_smooth(method = "lm")+ylim(0,50)+ggtitle("Ajuste lineal City_mpg vs Highway_mpg")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE }
+  ggplot(dfvehiculos, aes(x=Highway_mpg,y=City_mpg))+geom_point()+geom_smooth()+ylim(0,50)+ggtitle("Suavizado Ajustado a los datos City_mpg vs Highway_mpg")+theme(plot.title = element_text(hjust = 0.5,
+                                  size=rel(1.4), #Tamaño relativo de la letra del título
+                                  vjust=2, #Justificación vertical, para separarlo del gráfico
+                                  face="bold", #Letra negrilla. Otras posibilidades "plain", "italic", "bold" y "bold.italic"
+                                  color="black", #Color del texto
+                                  lineheight=1.5))
+```
+
+### Análisis explotatorio de influencia de las variables nominales en City_mpg
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   boxplot(City_mpg~Make, data = dfvehiculos, main = 'Car Milage Data (Make)', xlab = "Make", ylab = "Miles Per Gallon)")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   boxplot(City_mpg~Fuel_type, data = dfvehiculos, main = 'Car Milage Data (Fuel_type)', xlab = "Fuel_type", ylab = "Miles Per Gallon)")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   boxplot(City_mpg~Aspiration, data = dfvehiculos, main = 'Car Milage Data (Aspiration)', xlab = "Aspiration", ylab = "Miles Per Gallon)")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   boxplot(City_mpg~Num_of_doors, data = dfvehiculos, main = 'Car Milage Data (Num_of_doors)', xlab = "Num_of_doors", ylab = "Miles Per Gallon)")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   boxplot(City_mpg~Body_style, data = dfvehiculos, main = 'Car Milage Data (Body_style)', xlab = "Body_style", ylab = "Miles Per Gallon)")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   boxplot(City_mpg~Drive_wheels, data = dfvehiculos, main = 'Car Milage Data (Drive_wheels)', xlab = "Drive_wheels", ylab = "Miles Per Gallon)")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   boxplot(City_mpg~Engine_location, data = dfvehiculos, main = 'Car Milage Data (Engine_location)', xlab = "Engine_location", ylab = "Miles Per Gallon)")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   boxplot(City_mpg~Engine_type, data = dfvehiculos, main = 'Car Milage Data (Engine_type)', xlab = "Engine_type", ylab = "Miles Per Gallon)")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   boxplot(City_mpg~Num_of_cylinders, data = dfvehiculos, main = 'Car Milage Data (Num_of_cylinders)', xlab = "Num_of_cylinders", ylab = "Miles Per Gallon)")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   boxplot(City_mpg~Fuel_system, data = dfvehiculos, main = 'Car Milage Data (Fuel_system)', xlab = "Fuel_system", ylab = "Miles Per Gallon)")
+```
+
+### Analizamos los datos de cara a justificar y/o explicar la selección de tres factores que influyan en el consumo
+#### Coeficiente de correlación de las variables City_mpg y Wheel_base
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   cor(dfvehiculos$Wheel_base, dfvehiculos$City_mpg)
+```
+
+#### Coeficiente de correlación de las variables City_mpg y Length
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE, }
+   cor(dfvehiculos$Length, dfvehiculos$City_mpg)
+```
+
+#### Coeficiente de correlación de las variables City_mpg y Width
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   cor(dfvehiculos$Width, dfvehiculos$City_mpg)
+```
+
+#### Coeficiente de correlación de las variables City_mpg y Height
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  cor(dfvehiculos$Height, dfvehiculos$City_mpg)
+```
+
+#### Coeficiente de correlación de las variables City_mpg y Curb_weight
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  cor(dfvehiculos$Curb_weight, dfvehiculos$City_mpg)
+```
+
+#### Coeficiente de correlación de las variables City_mpg y Engine_size
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  cor(dfvehiculos$Engine_size, dfvehiculos$City_mpg)
+```
+
+#### Coeficiente de correlación de las variables City_mpg y Bore
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  cor(dfvehiculos$Bore, dfvehiculos$City_mpg)
+```
+
+#### Coeficiente de correlación de las variables City_mpg y Stroke
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  cor(dfvehiculos$Stroke, dfvehiculos$City_mpg)
+```
+
+#### Coeficiente de correlación de las variables City_mpg y Compression_ratio
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  cor(dfvehiculos$Compression_ratio, dfvehiculos$City_mpg)
+```
+
+#### Coeficiente de correlación de las variables City_mpg y Horsepower
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   cor(dfvehiculos$Horsepower, dfvehiculos$City_mpg)
+```
+
+#### Coeficiente de correlación de las variables City_mpg y Peak_rpm
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   cor(dfvehiculos$Peak_rpm, dfvehiculos$City_mpg)
+```
+
+#### Coeficiente de correlación de las variables City_mpg y Price
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   cor(dfvehiculos$Price, dfvehiculos$City_mpg)
+```
+
+#### Coeficiente de correlación de las variables ciudad City_mpg y Highway_mpg
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   cor(dfvehiculos$Highway_mpg, dfvehiculos$City_mpg)
+```
+
+### Tabla de valor del coeficiente de correlación de cada una de las variables numéricas 
+|Variable  | Coeficiente de Correlación | Interpretación
+|--|--|------|
+Highway_mpg | 0.987882 | El coeficiente de correlación nos da un valor positivo que nos indica que, si la una variable crece, la otra variable también crece como podemos observar en la figura, existiendo una relación entre las variables.
+Wheel_base | -0.5806572 | El coeficiente de correlación nos da un valor negativo que nos indica que, si la una variable crece, la otra variable decrece como podemos observar en las figuras, existiendo una relación entre las variables.
+Length | -0.7245444 | El coeficiente de correlación nos da un valor negativo que nos indica que, si la una variable crece, la otra variable decrece como podemos observar en la figura, existiendo una relación entre las variables.
+Width | -0.6666844 | El coeficiente de correlación nos da un valor negativo que nos indica que, si la una variable crece, la otra variable decrece como podemos observar en la figura, existiendo una relación entre las variables.
+Height | -0.1997375 | El coeficiente de correlación nos da un valor negativo que nos indica que, si la una variable crece, la otra variable decrece como podemos observar en la figura, existiendo una relación entre las variables.
+Curb_weight | -0.7621552 | El coeficiente de correlación nos da un valor negativo que nos indica que, si la una variable crece, la otra variable decrece como podemos observar en la figura, existiendo una relación entre las variables
+Engine_size | -0.6991393 | El coeficiente de correlación nos da un valor negativo que nos indica que, si la una variable crece, la otra variable decrece como podemos observar en la figura, existiendo una relación entre las variables.
+Bore | -0.5943196 | El coeficiente de correlación nos da un valor negativo que nos indica que, si la una variable crece, la otra variable decrece como podemos observar en la figura, existiendo una relación entre las variables.
+Stroke | -0.02584164 | El coeficiente de correlación nos da un valor negativo que nos indica que, si la una variable crece, la otra variable decrece como podemos observar en la figura, existiendo una relación entre las variables.
+Compression_ratio | 0.2783316 | El coeficiente de correlación nos da un valor positivo que nos indica que, si la una variable crece, la otra variable también crece como podemos observar en la figura, existiendo una relación entre las variables
+Horsepower | 0.4589688 | El coeficiente de correlación nos da un valor positivo que nos indica que, si la una variable crece, la otra variable también crece como podemos observar en la figura, existiendo una relación entre las variables
+Peak_rpm | -0.04813613 | El coeficiente de correlación nos da un valor negativo que nos indica que, si la una variable crece, la otra variable decrece como podemos observar en la figura, existiendo una relación entre las variables.
+Price | 0.3857882 | El coeficiente de correlación nos da un valor positivo que nos indica que, si la una variable crece, la otra variable también crece como podemos observar en la figura, existiendo una relación entre las variables.
+
+### Resultado de la exploración y análisis de los Datos
+<p style="text-align: justify;">
+De la exploración y análisis realizado se identifica que las variable Length, Width, Height,Curb_weight, Engine_size y Bore tienen correlación negativa con la variable (City_mpg): Se da cuando una variable aumenta la otra disminuye. 
+Se identifica que las variables Horsepower y Price tienen correlación positiva con la variable (City_mpg): Se da cuando la variable independiente aumenta y, la variable dependiente también aumenta.</p>
+### b.Construya, interprete y evalúe un modelo de regresión lineal para el consumo (mpg). A la hora de construir el modelo tenga en cuenta la influencia de las variables.
+<p style="text-align: justify;">
+Del literal a, donde analizamos las gráficas y posteriormente los coeficientes de correlación de todas las variables con la variable City_mpg, vemos que la variable consumo en la ciudad " Highway_mpg " tine mayor correlación e influencia sobre la variable City_mpg. Primeramente construimos el modelo todas las variables para confirmar lo expuesto anteriormente para  y obtener el modelo final.</p>
+#### Construcción y resumen del Modelo con todas la variables
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+modelo <- lm(City_mpg ~ Curb_weight+Wheel_base+ Length+Width+Height+Engine_type+ Engine_size+Bore+Stroke+Compression_ratio+Horsepower+Peak_rpm+Highway_mpg+Price,data = dfvehiculos)
+summary(modelo)
+```
+
+#### Calculo de AIC para diferentes combinaciones de modelos
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+step(object = modelo, direction = "both", trace = 1)
+```
+
+#### Obtención del Modelo.
+<p style="text-align: justify;">
+El modelo con todas las variables introducidas como predictores tiene un R2 alto (0.9613), es capaz de explicar el 96% de la variabilidad observada en el consumo de un vehículo. El p-value del modelo es significativo (0.0000000000000002), tiende a cero, por lo que se puede aceptar que el modelo no es por azar, al menos uno de los coeficientes parciales de regresión es distinto de 0. Muchos de ellos no son significativos, lo que es un indicativo de que no podrían contribuir al modelo.  
+
+De las variantes de modelos que se pueden construir, vemos que la variable Highway_mpg esta presente en el mejor modelo, con el valor de AIC=80.9    
+El resumen del modelo podemos ver que la variable Highway_mpg tiene mayor sigificancia de 0.000149 y, con lo analizado en el literal a, donde que muestra el valor de correlación de 0.9719988 decidimos que la utilizaremos para obtener el modelo final.  
+</p>
+#### Resumen del modelo final.
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+modelof <- lm(dfvehiculos$City_mpg ~ dfvehiculos$Highway_mpg)
+#summary(modelof)
+modelof
+```
+
+#### Formula del modelo final.
+     Citympg=-2.9135+0.9175*Highway_mpg
+
+#### Interpretación del modelo.
+<p style="text-align: justify;">
+ • La ecuación de la línea de regresión estimada es: Citympg=-2.9135+0.9175*Highway_mpg  
+ • La intersección (b0) es -2.9135. Se puede interpretar como la unidad de consumo prevista para un consumo en la carretera igual a cero (Highway_mpg de cero). Es decir, para un Highway igual a 0, esperamos tener -2.9135 mpg (galones de consumo) de conbustible en la ciudad.  
+ • El coeficiente beta para la variable Length (b1), también conocido como pendiente, es 0.9175. Esto significa que, para un Highway_mpg igual a 1, podemos esperar un aumento de 0.9175 en el consumo de conbustible en la ciudad. Es decir, Citympg=-2.9135+0.9175*1 = -1.996 mpg.</p>
+
+#### Evaluación del modelo.
+<p style="text-align: justify;">
+Antes de usar Citympg=-2.9135+0.9175*Highway_mpg para predecir la cantidad de combustible consumido en base a la consumo en la carretera (Highway_mpg), hay que asegurarse de que este modelo sea estadísticamente significativo:  
+ • Existe una relación estadísticamente significativa entre el predictor y la variable resultado  
+ • El modelo construido se ajusta bien a los datos.</p>
+
+#### Resumen estadístico del modelo.
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+summary(modelof)
+```
+
+#### Importancia de los coeficientes.
+<p style="text-align: justify;">
+  • Existe una asociación altamente significativa entre el predictor y la variable resultado, mientras que en el caso de la intercepción la asociación es significativa (bajo valor del estadístico t, aunque el p-valor es menor que 0.05).  
+  • Como los estadísticos t para la intersección y la variable predictora tienden a 0 entonces son altamente significativos, podemos rechazar la hipótesis nula y aceptar la hipótesis alternativa, lo que significa que existe una asociación significativa entre el predictor y la variable resultado.</p>
+
+#### Intervalos de confianza.
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+confint(modelof,level = 0.90)
+```
+<p style="text-align: justify;">
+En nuestro caso, existe el 95% de posibilidades de que el intervalo [-4.0, -1.76] contenga el verdadero valor de b0. Del mismo modo, el intervalo de confianza es de 95% para que la variable Highway_mpg este dentro del intervalo de [0.88, 0.94] .</p>
+
+#### Error Estándar Residual (RSE)
+<p style="text-align: justify;">
+• RSE = 1.43, lo que significa que los valores de consumo de combustible observados se desvían de la línea de regresión unas 1.43 unidades en promedio.  
+• Decidir si un RSE de 1.43 UD es o no un error de predicción aceptable, es subjetivo y depende del contexto del problema. Para ello calculamos el porcentaje de error.
+</p>
+#### Error porcentual
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+sigma(modelof)*100/mean(dfvehiculos$City_mpg)
+```
+
+#### R cuadrado y R cuadrado ajustado
+<p style="text-align: justify;">
+• En nuestro caso, R2 = 0.9444, que indica Claramente que las predicciones del modelo tienen una precisión del (94% de presición), el valor de R2 ajustado = 0.9448, lo que indica en palabras más simples, el R cuadrado ajustado nos dice qué porcentaje(94%) de variación de la variable dependiente(City_mpg) es explicado colectivamente por todas las variables independientes(Highway_mpg).</p>
+
+#### Estadístico F
+<p style="text-align: justify;">
+• Evalúa si al menos una variable predictora tiene un coeficiente distinto de cero. Un valor elevado para el estadístico F tendrá asociado un p-valor estadísticamente significativo (pv <0.05).  
+• El estadístico F es igual 1686 con un p-valor de 0.00000000000000022, lo que indica que la variable (Highway_mpg) no es altamente significativa estadísticamente.  Existe una variable predictora(Highway_mpg) con un coeficiente distinto de cero. Lo que implica que R es mayor que cero y, en consecuencia ambas variables(City_mpg,Highway_mpg) estan linealmente relacionadas.</p>
+### c. Construya, interprete y evalúe un modelo de regresión logística que ayude a determinar la probabilidad de adquirir un vehículo de gasolina (fuel-type).
+#### Análisis Preliminar para identificar las variables apropiadas para definir el modelo
+#### Visión general del conjunto de datos
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+    glimpse(dfvehiculos)
+```
+<p style="text-align: justify;">
+Al realizar el análisis general preliminar de los datos se identifica que existen 26 variables, 15 numéricas y 11 de tipo factor, entre ellas esta Fuel_type que es nuestra variable a predecir o target.</p>
+
+#### Resumen estadístico y gráficas de las distribuciones de las variables
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+    #knitr::kable(skim(dfvehiculos))
+    skim(dfvehiculos)
+```
+<p style="text-align: justify;">
+  
+En la parte superior podemos observar que existen 159 observaciones, la variable Fuel_type no tiene valores perdidos, no está ordenada y tiene dos posibles valores gas y die. </p>
+
+#### Análisis exploratorio de las variables de tipo factor
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+    #knitr::kable(skim(dfvehiculos))
+    dfvehiculos %>%
+        select_if(is.factor) %>%
+          gather() %>%
+            ggplot(aes(value)) + geom_bar() + facet_wrap(~key,scales='free') +
+          theme(axis.text=element_text(size=6))
+
+```
+<p style="text-align: justify;">
+Podemos ver en la imagen, los registros de automóviles a gasolinas son mucho más que los registros de los automóviles a diésel eso nos da una idea de que están los datos están desbalanceados.</p>
+
+#### Análisis exploratorio de las variables de tipo entero.
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+    #knitr::kable(skim(dfvehiculos))
+    dfvehiculos %>%
+        select_if(is.integer) %>%
+          gather() %>%
+            ggplot(aes(value)) + geom_density() + facet_wrap(~key,scales='free') +
+              theme(axis.text=element_text(size=6))
+
+```
+
+#### Análisis exploratorio de las variables de tipo double.
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+    #knitr::kable(skim(dfvehiculos))
+    dfvehiculos %>%
+        select_if(is.double) %>%
+            gather() %>%
+                ggplot(aes(value)) + geom_density() + facet_wrap(~key,scales='free') +
+                    theme(axis.text=element_text(size=8))
+
+
+```
+
+#### Análisis de correlaciones de las variables tipo integer.
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+    #knitr::kable(skim(dfvehiculos))
+    dfvehiculos %>%
+        select_if(is.integer) %>%
+            cor() %>%
+                round(digits = 2)
+
+
+```
+
+#### Análisis de correlaciones de las variables tipo double.
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+    #knitr::kable(skim(dfvehiculos))
+    dfvehiculos %>%
+        select_if(is.double) %>%
+            cor() %>%
+                round(digits = 2)
+
+
+```
+
+#### zoom sobre el balanceo de la variable target.
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+    #knitr::kable(skim(dfvehiculos))
+    table(dfvehiculos$Fuel_type)
+```
+<p style="text-align: justify;">
+De todo el análisis se puede concluir que:  
+Se eliminaron valores perdidos y nulos, se muestra la media de cada una de las variables, los cuartiles, la mediana, el máximo y, en la última columna se muestra el histograma de la distribución de cada una de las variables, para tener una idea general de su comportamiento.  
+A primera vista las variables predictoras (Compression_ratio, Horsepower), al parecer tienen valores atípicos las demás variables parecen tener un comportamiento normal.  
+Hay 15 vehículos a disesel y 144 a gasolina, esto nos indica que la variable objetivo o target(Fuel_type) no esta correctamente balanceada.
+</p>
+
+#### Obtenemos un conjunto de entrenamiento con el 70% de los datos y un conjunto de prueba con el 30% de los datos
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+    #rm(d_train)
+    #rm(d_test)
+    set.seed(1234)
+    df<- na.omit(dfvehiculos)
+    df$split = runif(nrow(df))
+    train = df[df$split<0.7, -ncol(df)]
+    test = df[df$split>=0.7, -ncol(df)]
+```
+
+#### Construcción del modelo
+<p style="text-align: justify;">
+En primera instancia construimos un modelo consideramos todas las variables numéricas, ya que puede ser cualquier variable la que tenga mayor impacto y significancia en la probabilidad de comprar de un vehículo a gasolina, más adelante definiremos la o las variables que consideraremos adecuadas para el modelo definitivo.
+</p>
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+x<-c('Symboling','Wheel_base', 'Length', 'Width', 'Height', 'Curb_weight','Engine_size','Bore', 'Stroke', 'Compression_ratio', 'Horsepower', 'Peak_rpm','City_mpg', 'Highway_mpg', 'Price')
+y<-"Fuel_type"
+fmla <- paste(y,paste(x, collapse = "+"),sep = "~")
+model <- glm(fmla,data=train,family=binomial(link="logit"))
+```
+
+#### Análisis del AIC de varios modelos
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   step(object = model, direction = "both")
+```
+
+#### Construcción del Modelo definitivo.
+<p style="text-align: justify;">
+Para construir el modelo definitivo consideramos las variables "Aspiration","Bore","Horsepower","Peak_rpm".  
+</p>
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+x<-c("Aspiration","Bore","Horsepower","Peak_rpm")
+y<-"Fuel_type"
+fmla <- paste(y,paste(x, collapse = "+"),sep = "~")
+model <- glm(fmla,data=train,family=binomial(link="logit"))
+```
+
+#### Interpretación y evaluación del modelo construido
+<p style="text-align: justify;">
+Después de construir el modelo, su objetivo es utilizarlo para predecir la probabilidad de sé que se compre un vehículo a gasolina.  
+Pasamos datos al método predict().  
+Almacenamos las predicciones para los conjuntos de datos de entrenamiento y prueba añadiendo la columna pred en los respectivos data frame(Train, Test)
+</p>
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+train$pred<-predict(model,newdata=train,type="response")
+test$pred<-predict(model,newdata=test,type="response")
+```
+
+<p style="text-align: justify;">
+Clasificamos las nuevas instancias en las categorías de positivo y negativo, validamos que el modelo asigne valores altos a las instancias positivas y valores bajos a las instancias negativas.
+</p>
+#### Construcción del grafico de predicciones
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+#creaci?n de las predicciones para el modelo
+ggplot(train,aes(x=pred,color=Fuel_type,linetype=Fuel_type))+
+geom_density()
+```
+
+<p style="text-align: justify;">
+Existe más cantidad de compras de vehículos a gasolina y pocas compras de vehículos a diésel.  
+Como podemos observar los valores de instancias de vehículos (compras a diésel) tienen un valor bajo, con una probabilidad del casi 0.1%, Mientras que los valores de las instancias de vehículos a gasolina (compras a gasolina) es muy alto respecto a las compras a diésel con una probabilidad del 99%
+No existen ninguna subpoblación del entre la distribución de los valores de las compras a gasolina y la distribución de las compras a diésel.  
+</p>
+#### Evaluación de la calidad de la predicción con el conjunto de datos de test.
+<p style="text-align: justify;">
+Para utilizar el modelo como clasificador tenemos que escoger el umbral (para todos los valores devueltos por el modelo) a partir del cual, las instancias se clasifican, como compras de vehículos a gasolina por encima del umbral, y por debajo se consideran como compras de vehículos a diésel. 
+</p>
+#### Matríz de confusíon en los datos de test con umbral de 0.6
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+umbral<-0.6
+cm.test<-table(pred=test$pred>umbral,Fuel_type=test$Fuel_type)
+cm.train<-table(pred=train$pred>umbral,Fuel_type=train$Fuel_type)
+cm.test
+```
+
+<p style="text-align: justify;">
+Lo que nos dice la matriz de confusión, es que el modelo predice 117 compras de vehículos a gasolina y, en el conjunto de datos también constan como compras a gasolina. El modelo predice 12 compras de vehículos a diésel, que también están como compras a diésel en el conjunto de datos. No existen falso negativos y hay 4 falsos positivos.
+</p>
+
+#### cálculo del umbral de equilibrio con los siguientes valores (0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9)
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+recuerdo<-c()
+enriquecimiento<-c()
+precision<-c()
+umbral=c(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9)
+for(i in 1:9) {
+  cm.test<-table(pred=test$pred>umbral[i],Fuel_type=test$Fuel_type)
+  precision[i]<-cm.test[2,2]/sum(cm.test[2,])
+  recuerdo[i]=cm.test[2,2]/sum(cm.test[,2])
+  enriquecimiento[i]<-precision[i]/mean(as.numeric(test$Fuel_type))
+}
+#install.packages("scales")
+#library(rescale)
+#library("ablinees")
+x1=rescale(umbral)
+y=rescale(recuerdo)
+y1=rescale(enriquecimiento)
+{plot(x1,y,type = "l",col="red",xlab = "Umbral", ylab = "Enriquecimiento y recuerdo", main="Enriquecimiento y recuerdo vs Umbrales")
+lines(x1,y1,col="blue")}
+```
+<p style="text-align: justify;">
+La gráfica nos muestra el punto de corte aproximadamente en el valor del umbal 0.8.
+</p>
+#### Realizamos el cálculo de la precision, recall y enrichmente con el umbral=0.8.
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+recuerdo<-c()
+enriquecimiento<-c()
+precision<-c()
+umbral=c(0.8)
+for(i in 1:1) {
+  cm.test<-table(pred=test$pred>umbral[i],Fuel_type=test$Fuel_type)
+  precision[i]<-cm.test[2,2]/sum(cm.test[2,])
+  recuerdo[i]=cm.test[2,2]/sum(cm.test[,2])
+  enriquecimiento[i]<-precision[i]/mean(as.numeric(test$Fuel_type))
+}
+#install.packages("scales")
+#library(rescale)
+x1=rescale(umbral)
+y=rescale(recuerdo)
+y1=rescale(enriquecimiento)
+#{plot(x1,y,type = "l",col="red",xlab = "Umbral", ylab = "Enriquecimiento y recuerdo", main="Enriquecimiento y recuerdo vs Umbral")
+#lines(x1,y1,col="blue")}
+paste("Precision= ", precision)
+paste("Enriquecimiento= ", enriquecimiento)
+paste("Recuerdo= ", recuerdo)
+```
+<p style="text-align: justify;">
+Precisión (100.0%) de cara a la clasificación.  
+Una identificación del 89% de compras de vehículos de gasolina del total existentes en el conjunto datos.  
+Esta identificación se produce con una tasa 0.51 veces mayor que la media.  
+
+Estos valores indican que casi no existen falsos negativos identificados por el clasificador, así como la fracción de verdaderos positivos que encuentra el clasificador.  
+</p>
+
+#### Coeficientes del modelo
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+coefficients(model)
+```
+
+#### Resumen del modelo
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+summary(model)
+```
+<p style="text-align: justify;">
+Valores absolutos de máximos y mínimos casi son iguales, los valores de los cuartiles uno y tres tienen gran diferencia, aunque la mediana es cercana a cero.  
+En este caso la devianza nulo del modelo es 77.59, pero cuando añadimos tratamiento este valor se reduce a 29.77, lo que nos dice que con esta variable el modelo mejora en la  predicción de si se vende un vehículo a gasolina.  
+El modelo es bueno, la devianza residual es menor que la devianza nula ya que valores más bajo de -2LL indican que el modelo predice la variable respuesta (compra de vehículos a gasolina) con mayor precisión.  
+La variable que tiene más significancia estadísticamente es Aspiration ya que tiende a cero y tiene ***, luego están la variable City_mpg y la intercepción y por último Stroke.  
+La mayor parte de criterios indican que el modelo es bueno y se ajusta a los datos.
+</p>
+
+#### Eficacia del modelo prediciendo la variable respuesta mediante el estadístico chi-cuadrado
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+dev <- model$deviance
+nullDev <- model$null.deviance
+modelChi <- nullDev - dev
+modelChi
+```
+<p style="text-align: justify;">
+Para saber la eficacia del modelo prediciendo la variable respuesta utilizamos el estadístico chi-cuadrado, que mide la diferencia entre el modelo en su estado actual y el modelo cuando sólo se incluyó la constante.
+</p>
+
+#### Probabilidad asociada al estadístico chi-cuadrado
+<p style="text-align: justify;">
+Para calcular la probabilidad asociada al estadístico chi-cuadrado utilizamos la función pchisq(Chi, gl), cuyos argumentos son el estadístico chi-cuadrado y sus grados de libertad. La probabilidad que queremos es 1 menos el valor de la función pchisq( ).
+</p>
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+chigl <- model$df.null - model$df.residual
+chisq.prob <- 1 - pchisq(modelChi, chigl)
+chisq.prob
+```
+<p style="text-align: justify;">
+Como la probabilidad es menor que 0.05, podemos rechazar la hipótesis nula, de que el modelo es mejor prediciendo la variable resultado que si elegimos por azar. Por tanto, podemos decir que, en general, el modelo tiene una aportación significativa en la perdición sobre la compra de un vehículo a gasolina.
+</p>
+
+#### Resumen de la calidad del modelo
+<p style="text-align: justify;">
+(Dispersion parameter for binomial family taken to be 1)  
+
+    Null deviance: 79.84513998772447  on 128  degrees of freedom  
+Residual deviance:  0.00000000081772  on 113  degrees of freedom  
+AIC: 32  <br>
+
+Number of Fisher Scoring iterations: 25  
+</p><br>
+<p style="text-align: justify;">
+El valor de AIC es bajo lo que implica un buen modelo en compración con otros. 
+</p>
+
+#### Criterio de máxima verosimilitud
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+pr2<-1-(model$deviance/model$null.deviance)
+paste("Pseudo R-cuadrado = ",pr2)
+```
+<p style="text-align: justify;">
+El estadístico log-likelihood es análogo a la suma de cuadrados residual en la regresión múltiple en el sentido de que es un indicador de cuánta información sin explicar queda en la variable respuesta tras haber ajustado el modelo. Grandes valores del log-likelihood indican un pobre ajuste del modelo, cuanto mayor sea este valor, más variabilidad sin explicar queda en el modelo. En nuestro caso el valor es bajo lo que indica que el modelo se ajusta adecuadamente a los datos ya que explica la mayor cantidad de información en la variable respuesta.
+</p>
+### d. Aplique el algoritmo k-medias y obtenga grupos de vehículos. Analice e interprete los grupos obtenidos.
+<p style="text-align: justify;">
+Para aplicar el algaritmo K-medias consideraremos únicamente las variables numéricas del conjunto de datos vehículos, en base a lo analizado en los literales anteriores.
+</p>
+
+#### Definimos el conjunto de datos con las variables seleccionadas
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+dfnew<-dfvehiculos[,c('Symboling','Wheel_base', 'Length', 'Width', 'Height', 'Curb_weight','Engine_size','Bore', 'Stroke', 'Compression_ratio', 'Horsepower', 'Peak_rpm',     'City_mpg', 'Highway_mpg', 'Price')]
+```
+
+#### Muestra de 10 observaciones seleccionadas
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+head(dfnew,10)
+```
+
+#### Resumen estadístico de las variables seleccionadas
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+summary(dfnew)
+```
+<p style="text-align: justify;">
+En base al resumen podemos deducir que el precio mínimo de un vehículo es de 2.0 y máximo de 187. el tamaño de la máquina ( Engine_size) varía desde 61.0 a 258, existiendo una gran diferencia, en cuanto a la anchura los vehículos no tienen gran diferencia, pero en longitud si varían, tres veces más el mínimo con el máximo.
+Una vez determinadas las variables a utilizar procedemos a Re-escalar las variables seleccionadas para que tengan media 0 y desviación típica 1.
+</p>
+
+#### Re-escalar las variables seleccionadas para que tengan media 0 y desviación típica 1
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+num.vars<-colnames(dfnew)
+dfvehiculosscale<-scale(dfvehiculos[,num.vars]) 
+```
+
+#### Muestra de las variables re-escaladas para aplicar el algoritmo K-medias
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+head(dfvehiculosscale,10)
+```
+
+#### Aplicamos el algoritmo de k-medias para encontrar los grupos de vehículos
+<p style="text-align: justify;">
+Primeramente almacenamos la media y la desviación típica de las variables, para después poder reconstruir el conjunto de datos original.
+</p>
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+pcenter<- attr(dfvehiculosscale,"scaled:center")
+pscale<- attr(dfvehiculosscale,"scaled:scale")
+```
+
+#### Inicio del Agrupamiento
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+k<-10 #Numero de grupos
+pclusters<-kmeans(dfvehiculosscale,k,nstart = 10, iter.max = 100)
+```
+
+#### Resumen estaístico del Agrupamiento (k-medias)
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+summary(pclusters)
+```
+
+#### Centroides con valores escaldos
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+pclusters$centers
+```
+
+#### Tamaño de cada grupo
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+pclusters$size
+```
+
+#### Vector con las etiquetas de grupo para cada observación(fila en los datos)
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+groups <- pclusters$cluster
+pclusters$cluster
+```
+
+#### Detalle de grupos en el conjunto de datos de los vehículos
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+# funcion ad-hoc para visualizar los grupos en el conjuto de datos de los clientes del banco
+print_clusters<-function(labels, k){
+  for (i in 1:k){
+    print (paste("cluster",i))
+    print (dfvehiculos[labels==i,c('Symboling','Wheel_base', 'Length', 'Width', 'Height', 'Curb_weight','Engine_size','Bore', 'Stroke', 'Compression_ratio', 'Horsepower', 'Peak_rpm',     'City_mpg', 'Highway_mpg', 'Price')])
+  }
+}
+print_clusters(groups,k)
+#Distancia al cuadrado entre dos vectores
+```
+<p style="text-align: justify;">
+Como podemos ver en la imagen anterior el algoritmo de k-medias a clasificado los datos en 10 grupos que son identificados como: “Cluster 1”, “Cluster 2”…… : “Cluster 10”, según lo indicado en el valor de k.
+</p>
+
+#### Determinamos el número óptimo del número de grupos(K)
+<p style="text-align: justify;">
+Para determinar el número óptimo de grupos, primeramente, definimos el rango de números de grupos, para esta práctica decidimos realizarla con un rango de 2-10 números de grupos.  
+Para cada valor de k que va desde k=2 a k=10, vamos calculando la suma total del valor de WSS y el valor del índice de CALINSKI HARABASZ de agrupamiento, este cálculo lo realizamos con las funciones implementadas en Rstudio.
+</p>
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+nf<-data.frame()
+dframe=data.frame()
+i<-10
+for(k in 2:i)#Numero de grupos
+{
+  pclusters<-kmeans(dfvehiculosscale,k,nstart = 10, iter.max = 100)#Ejecutamos el algoritmo de agrupamiento
+  groups<-pclusters$cluster
+  sqr_edist <- function(x, y){
+  d <- sum((x-y)^2)
+  return(d)
+  }
+
+#Calcula WSS para un único cluster, que viene representado como una matriz(cada fila representa un punto)
+  wss.cluster <- function(cluster_matrix){
+  #Calcula el centroide del cluster: la media de todos los puntos
+  c0 <- apply(cluster_matrix, 2, FUN = mean)
+  #Calcula la distancia al cuadrado de cada punto del cluster respecto al centroide y suma todas las distancias
+  wssc <- sum(apply(cluster_matrix, 1, FUN = function(row){sqr_edist(row, c0)}))
+  
+  return(wssc)
+  }
+
+#Calcula la WSS total a partir de un conjunto de puntos de datos y las etiquetas de cluster asociadas
+  wss.total <- function(data.matrix, cluster_labels){
+  wsstot <- 0
+  k <- length(unique(cluster_labels))
+  
+  #Extrae cada cluster, calcula la WSS del cluster y suma todos los valores
+  for(i in 1:k)
+    wsstot <- wsstot + wss.cluster(subset(data.matrix, cluster_labels ==i))
+  
+    return(wsstot)
+  }
+
+######Indice Calinski-Harabasz(B/W)
+
+#the total sum of squares TSS
+  totss <- function(dmatrix){
+    grandmean <- apply(dmatrix, 2, FUN = mean)
+    tss <- sum(apply(dmatrix, 1, FUN=function(row){sqr_edist(row, grandmean)}))
+  
+    return(tss)
+  }
+
+#Índice Calinski-Harabasz para agrupamiento
+  ch.index <- function(data_matrix, cluster_labels){
+    n <- dim(data_matrix)[1]
+    k <- length(unique(cluster_labels))#number of groups
+  
+    tss <- totss(data_matrix)
+    wss <- wss.total(data_matrix, cluster_labels)
+    bss <- tss - wss
+  
+  #Varianzas
+    W <- wss/(n-k)
+    B <- bss/(k-1)
+  
+    return(B/W)
+  }
+
+
+  chindex <- ch.index(dfvehiculosscale, groups)
+  wss <- wss.total(dfvehiculosscale, groups)
+
+  nf=data.frame(k, wss, chindex)
+  dframe = rbind(dframe, nf)
+  
+}
+```
+
+#### Matríz para realizar la gráfica que permite determinar el valor optimo de K
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+   dframe
+```
+
+#### Gráfica para determinar el valor de K
+<p style="text-align: justify;">
+Con los datos obtenidos anteriormente de realiza la gráfica del número de grupos con respecto a la suma total de WSS para cada número de grupos.
+</p>
+````{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  plot(dframe$k,dframe$wss, type="l",col="red",xlab = "Number of cluster", ylab="wss total")
+````
+
+<p style="text-align: justify;">
+En la gráfica no se puede apreciar claramente el punto de quiebre, en el qué el valor de la suma del total de WSS comience a relentizar considerablemente en su decrecimiento, se puede considerar el decrecimiento con el valor de K=5 o k=6. 
+</p>
+#### Refinado de la gráfica para determinar el valor de K
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  wssplot <- function(dfvehiculosscale, nc=10, seed=1234){
+  wss <- (nrow(dfvehiculosscale)-1)*sum(apply(dfvehiculosscale,2,var))
+  for (i in 2:nc){
+    set.seed(seed)
+    wss[i] <- sum(kmeans(dfvehiculosscale, centers=i)$withinss)}
+  plot(1:nc, wss, type="b", xlab="Number of Clusters",
+       ylab="Within groups sum of squares")
+  wss
+}
+wssplot(dfvehiculosscale)
+```
+
+#### Gráfica CALINSKI HARABASZ para determinar el valor de K
+<p style="text-align: justify;">
+Para comprobar lo obtenido en el análisis anterior, realizamos la gráfica del número de grupos con respecto al índice de CALINSKI HARABASZ de agrupamiento
+</p>
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  plot(dframe$k,dframe$ch, type="l",col="red",xlab = "Number of cluster", ylab="CH Index")
+```
+
+<p style="text-align: justify;">
+Este índice es la razón entre la varianza entre cluster (la varianza de todos los centroides de los grupos respecto al gran centroide de los datos) y, la varianza total dentro del clúster (la media WSS de los grupos).  
+En la gráfica se muestra claramente el punto de quiebre cuando el valor del número de grupos es k=5.  
+Adicional se realiza una comprobación con otro código(function) de R en el que se calcula la suma de total del WSS correspondiente a cada número de grupos y, se obtiene la siguiente grafica.
+</p>
+<p style="text-align: justify;">
+Para determinar el número optimo de grupos, analizamos las tres gráficas, en la primera gráfica no se tienen una apreciación clara del punto de quiebre, en la segunda gráfica se aprecia un punto de quiebre con k=2 y k=5, en la tercera gráfica se muestra claramente el punto de quiebre con k=5. Lo que nos permite concluir que el número óptimo de grupos es 5.
+</p>
+#### Aplicamos el algoritmo k-medias con el número óptimo de grupos K=5
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+  k<-5 #Numero de grupos
+  pclusters<-kmeans(dfvehiculosscale,k,nstart = 10, iter.max = 100)#Ejecutamos el algoritmo de agrupamiento
+```
+
+#### Resumen estadístico del agrupamiento
+```{r echo=TRUE, message=FALSE, warning=FALSE, error=TRUE}
+  summary(pclusters)
+```
+
+#### Enfoque en el Output del agrupamiento
+````{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  pclusters
+````
+
+<p style="text-align: justify;">
+Interpretacion de los datos mostrados.<br>    
+Hay 5 clúster(grupos) de 38, 33, 57, 9, y 22 datos cada uno para un total de 159 registros.   
+El algoritmo computa la media óptima para hallar los centroides, los cuales, muestra en Cluster Means, cuando detecta estos, en este caso son 5, por k=5.  
+En Clustering vector, indica el pronóstico para cada registro testeado con el algoritmo.  
+Within cluster sum of squares by cluster:   
+between_SS / total_SS, es una medida de calidad e indica que tanto están separados los grupos de manera inter-cluster en relación al agrupamiento intra-cluster, mientras, se esté más cercano al 100%, mayor será la calidad del modelo.   
+288.44441 220.94533 354.70786  68.17559 165.42361, es la inercia intra-clúster de cada grupo.  
+Available components:Son Elementos disponibles del modelo, los cuales, se explican a continuación.
+  1. Cluster: La categorización asignada a cada observación del dataset en función a su cercanía a
+  estos centros.   
+  2. Centers: Los centroides.  
+  3. Totss: Inercia total del conjunto de datos.  
+  4. Withinss: Inercia intra-clases de cada uno de los grupos.  
+  5. Tot.withinss: Inercia intra-clases total.  
+  6. Betweenss: Inercia inter-clases.  
+  7. Size: El tamaño de cada grupo.  
+  8. Iter	: Número de iteraciones empleado.  
+</p>
+#### Centroides con valores escaldos y k=5 
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+    pclusters$centers
+```
+
+#### Número de puntos de cada grupo
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+    pclusters$size
+```
+
+#### Vector con las etiquetas de grupo para cada observación
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+    pclusters$cluster
+```
+
+#### Grupos en el conjunto de datos de vehículos
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+    print_clusters(groups,k)
+```
+<p style="text-align: justify;">
+Como podemos ver en el detalle de los grupos el agrupamiento de k-medias a clasificado los datos en cinco grupos de acuerdo con el valor óptimo k=5.
+</p>
+
+#### Gráfica de cómo están distribuidos y clasificados los grupos.
+```{r echo=FALSE, message=FALSE, warning=FALSE, error=TRUE}
+  #ggplot() + geom_point(aes(x = , y = pclusters$cluster , color = pclusters$cluster), data = dfnew, size = 2) +
+  #scale_colour_gradientn(colours=rainbow(4)) +
+  #ggtitle('Clusters de Datos con k = 7 / Agrupamiento Jerárquico') + 
+  #xlab('X') + ylab('Y')
+  plot(dfvehiculosscale, col =pclusters$cluster,main = "k-means Clustering",xlab = "Vehículos", ylab = "Grupos")
+```
+<p style="text-align: justify;">
+Los grupos los ha clasificado de acuerdo con el  Wheel_base que tienen los vehículos, luego por el precio y el símbolo.  
+En la imagen podemos ver tres grupos definidos con características totalmente diferentes que son el grupo de color verde, turquesa y azul, mientras que el grupo El grupo rojo comparten ciertas características de los demás grupos, el grupo de color negro comparte características del grupo turquesa y verde.  
+En el primer grupo se encuentran los vehículos de menor Price, Height, Width y tienen mayor Symboling, el segundo grupo los que tienen mas Price y menos Symboling y edad que los del primer grupo y, así sucesivamente hasta llegar a completar los 5 grupos.<br><br>
+</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
